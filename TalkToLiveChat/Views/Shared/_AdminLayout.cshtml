@@ -1,0 +1,99 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TalkTo Admin Portal</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/font-awesome.min.css" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dash-body">
+    <!-- Admin Sidebar -->
+    <aside class="dash-sidebar">
+        <div class="dash-brand">
+            <i class="fa-solid fa-comment-dots text-success fs-3"></i>
+            <h1 class="dash-brand-title">TalkTo <span>Admin</span></h1>
+        </div>
+        
+        <nav class="dash-nav">
+            <div class="dash-nav-header">Overview</div>
+            <a asp-controller="Admin" asp-action="Index" class="dash-nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard & Monitor</span>
+            </a>
+
+            <div class="dash-nav-header">Management</div>
+            <a asp-controller="Admin" asp-action="Agents" class="dash-nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Agents" ? "active" : "")">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Support Agents</span>
+            </a>
+            <a asp-controller="Admin" asp-action="Services" class="dash-nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Services" ? "active" : "")">
+                <i class="fa-solid fa-cubes-stacked"></i>
+                <span>Chat Services</span>
+            </a>
+            <a asp-controller="Admin" asp-action="Visitors" class="dash-nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Visitors" ? "active" : "")">
+                <i class="fa-solid fa-address-book"></i>
+                <span>Website Visitors</span>
+            </a>
+
+            <div class="dash-nav-header">Analytics & Export</div>
+            <a asp-controller="Admin" asp-action="Reports" class="dash-nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Reports" ? "active" : "")">
+                <i class="fa-solid fa-file-invoice"></i>
+                <span>Reports & Analytics</span>
+            </a>
+
+            <div class="dash-nav-header">Quick Access</div>
+            <a asp-controller="Agent" asp-action="Index" class="dash-nav-link" target="_blank">
+                <i class="fa-solid fa-headset"></i>
+                <span>Open Agent Desk <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:10px;"></i></span>
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="dash-nav-link" target="_blank">
+                <i class="fa-solid fa-globe"></i>
+                <span>Public Website <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:10px;"></i></span>
+            </a>
+        </nav>
+
+        <div class="dash-sidebar-footer">
+            <div class="dash-user-pill">
+                <img src="@(User.FindFirst("ProfileImage")?.Value ?? "/images/admin-avatar.svg")" class="dash-user-avatar" alt="Admin" />
+                <div class="dash-user-info">
+                    <div class="dash-user-name">@(User.Identity?.Name ?? "Administrator")</div>
+                    <div class="dash-user-role">Super Admin</div>
+                </div>
+            </div>
+            <a asp-controller="Account" asp-action="Logout" class="btn btn-sm btn-outline-light" title="Sign Out">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <h2 class="dash-page-title">@ViewData["Title"]</h2>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill font-monospace" style="font-size:12px;">
+                    <i class="fa-solid fa-bolt me-1"></i> SignalR Live Monitoring
+                </span>
+                <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-danger btn-sm px-3 rounded-pill">
+                    <i class="fa-solid fa-power-off me-1"></i> Logout
+                </a>
+            </div>
+        </header>
+
+        <div class="dash-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/signalr.min.js"></script>
+    <script src="~/lib/chart.umd.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

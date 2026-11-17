@@ -1,0 +1,93 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TalkTo Agent Live Desk</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/font-awesome.min.css" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dash-body">
+    <!-- Agent Sidebar -->
+    <aside class="dash-sidebar">
+        <div class="dash-brand">
+            <i class="fa-solid fa-headset text-success fs-3"></i>
+            <h1 class="dash-brand-title">TalkTo <span>Agent</span></h1>
+        </div>
+        
+        <nav class="dash-nav">
+            <div class="dash-nav-header">Workspace</div>
+            <a asp-controller="Agent" asp-action="Index" class="dash-nav-link active">
+                <i class="fa-solid fa-comments"></i>
+                <span>Live Chat Desk</span>
+            </a>
+
+            <div class="dash-nav-header">Navigation</div>
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-controller="Admin" asp-action="Index" class="dash-nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Admin Panel</span>
+                </a>
+            }
+            <a asp-controller="Home" asp-action="Index" class="dash-nav-link" target="_blank">
+                <i class="fa-solid fa-globe"></i>
+                <span>Customer Site <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:10px;"></i></span>
+            </a>
+        </nav>
+
+        <div class="dash-sidebar-footer">
+            <div class="dash-user-pill">
+                <img src="@(User.FindFirst("ProfileImage")?.Value ?? "/images/default-avatar.svg")" class="dash-user-avatar" alt="Agent" />
+                <div class="dash-user-info">
+                    <div class="dash-user-name">@(User.Identity?.Name ?? "Support Agent")</div>
+                    <div class="dash-user-role">Customer Agent</div>
+                </div>
+            </div>
+            <a asp-controller="Account" asp-action="Logout" class="btn btn-sm btn-outline-light" title="Sign Out">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <h2 class="dash-page-title">Agent Workspace</h2>
+                <!-- Availability Status Selector -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small fw-semibold">Status:</span>
+                    <select id="agentStatusSelect" class="dash-status-select online">
+                        <option value="Online" selected>🟢 Online</option>
+                        <option value="Busy">🟡 Busy</option>
+                        <option value="Offline">⚪ Offline</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill font-monospace" style="font-size:12px;">
+                    <i class="fa-solid fa-signal text-success me-1"></i> Real-Time Connected
+                </span>
+                <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-danger btn-sm px-3 rounded-pill">
+                    <i class="fa-solid fa-power-off me-1"></i> Logout
+                </a>
+            </div>
+        </header>
+
+        <div class="dash-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/signalr.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

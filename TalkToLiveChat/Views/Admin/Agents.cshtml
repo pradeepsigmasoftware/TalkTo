@@ -1,0 +1,239 @@
+@model List<TalkToLiveChat.Models.Entities.Agent>
+@{
+    ViewData["Title"] = "Support Agent Management";
+    Layout = "_AdminLayout";
+    var services = ViewBag.Services as List<TalkToLiveChat.Models.Entities.ServiceItem> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Customer Support Agents</h4>
+        <p class="text-muted small mb-0">Configure agent access, service skills, concurrent chat limits, and availability.</p>
+    </div>
+    <button type="button" class="btn btn-success fw-semibold rounded-3 shadow-sm" onclick="openAgentModal(0)">
+        <i class="fa-solid fa-user-plus me-1"></i> Add New Agent
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase text-secondary">
+                <tr>
+                    <th>Agent</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Availability</th>
+                    <th>Max Chats</th>
+                    <th>Active / Total</th>
+                    <th>Assigned Services</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="@(a.ProfileImage ?? "/images/default-avatar.svg")" class="rounded-circle border" style="width:36px; height:36px; object-fit:cover;" alt="Avatar" />
+                                <strong class="text-dark">@a.AgentName</strong>
+                            </div>
+                        </td>
+                        <td><code>@a.Email</code></td>
+                        <td>
+                            <span class="badge @(a.Role == "Admin" ? "bg-dark" : "bg-primary-subtle text-primary")">
+                                @a.Role
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge @(a.AvailabilityStatus == "Online" ? "bg-success" : (a.AvailabilityStatus == "Busy" ? "bg-warning text-dark" : "bg-secondary"))">
+                                @a.AvailabilityStatus
+                            </span>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">@a.MaxConcurrentChats</span></td>
+                        <td>
+                            <span class="fw-bold text-success">@a.ActiveChatsCount</span> / <span class="text-muted">@a.TotalAssignedChats</span>
+                        </td>
+                        <td style="max-width:240px;">
+                            <div class="small text-truncate" title="@a.AssignedServices">
+                                @(string.IsNullOrEmpty(a.AssignedServices) ? "None" : a.AssignedServices)
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge @(a.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger")">
+                                @(a.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openAgentModal(@a.AgentId)" title="Edit Agent">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm @(a.IsActive ? "btn-outline-danger" : "btn-outline-success") py-0 px-2" onclick="toggleAgentStatus(@a.AgentId, @(a.IsActive ? "false" : "true"))" title="@(a.IsActive ? "Deactivate" : "Activate")">
+                                    <i class="fa-solid @(a.IsActive ? "fa-ban" : "fa-check")"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add / Edit Agent -->
+<div class="modal fade" id="agentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="agentModalTitle">
+                    <i class="fa-solid fa-user-gear text-success me-2"></i>Configure Support Agent
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="agentForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="agentId" name="AgentId" value="0" />
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Agent Full Name</label>
+                            <input type="text" id="agentName" name="AgentName" class="form-control" placeholder="e.g. Rahul Sharma" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email Address (Login)</label>
+                            <input type="email" id="agentEmail" name="Email" class="form-control" placeholder="rahul@tawkto.local" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Password <span class="text-muted fw-normal">(Leave blank to keep existing)</span></label>
+                            <input type="password" id="agentPassword" name="rawPassword" class="form-control" placeholder="Enter new password" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">System Role</label>
+                            <select id="agentRole" name="Role" class="form-select">
+                                <option value="Agent">Agent</option>
+                                <option value="Admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Max Concurrent Chats</label>
+                            <input type="number" id="agentMaxChats" name="MaxConcurrentChats" class="form-control" min="1" max="25" value="5" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Account Status</label>
+                            <select id="agentIsActive" name="IsActive" class="form-select">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12 mt-3">
+                            <label class="form-label small fw-bold d-block">Assigned Services (Skills Matching)</label>
+                            <div class="row g-2 p-3 bg-light rounded-3 border">
+                                @foreach (var s in services)
+                                {
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input service-check" type="checkbox" value="@s.ServiceId" id="srvCheck_@s.ServiceId" />
+                                            <label class="form-check-label small" for="srvCheck_@s.ServiceId">
+                                                @s.ServiceName
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm fw-semibold">Save Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function openAgentModal(agentId) {
+            document.getElementById('agentForm').reset();
+            document.querySelectorAll('.service-check').forEach(cb => cb.checked = false);
+
+            if (agentId === 0) {
+                document.getElementById('agentId').value = '0';
+                document.getElementById('agentModalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-success me-2"></i>Add New Agent';
+                document.getElementById('agentPassword').required = true;
+            } else {
+                document.getElementById('agentModalTitle').innerHTML = '<i class="fa-solid fa-user-gear text-primary me-2"></i>Edit Support Agent';
+                document.getElementById('agentPassword').required = false;
+
+                try {
+                    const res = await fetch(`/Admin/GetAgent?agentId=${agentId}`);
+                    const agent = await res.json();
+                    if (agent) {
+                        document.getElementById('agentId').value = agent.agentId;
+                        document.getElementById('agentName').value = agent.agentName;
+                        document.getElementById('agentEmail').value = agent.email;
+                        document.getElementById('agentRole').value = agent.role;
+                        document.getElementById('agentMaxChats').value = agent.maxConcurrentChats;
+                        document.getElementById('agentIsActive').value = agent.isActive ? 'true' : 'false';
+
+                        if (agent.assignedServiceIds) {
+                            agent.assignedServiceIds.forEach(id => {
+                                const cb = document.getElementById(`srvCheck_${id}`);
+                                if (cb) cb.checked = true;
+                            });
+                        }
+                    }
+                } catch (e) {
+                    alert('Failed to load agent details.');
+                    return;
+                }
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('agentModal'));
+            modal.show();
+        }
+
+        document.getElementById('agentForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            const selectedServices = [];
+            document.querySelectorAll('.service-check:checked').forEach(cb => {
+                selectedServices.push(cb.value);
+            });
+            formData.append('serviceIds', selectedServices.join(','));
+
+            try {
+                const res = await fetch('/Admin/SaveAgent', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error saving agent.');
+                }
+            } catch (err) {
+                alert('Error saving agent.');
+            }
+        });
+
+        async function toggleAgentStatus(agentId, isActive) {
+            const action = isActive ? 'activate' : 'deactivate';
+            if (!confirm(`Are you sure you want to ${action} this agent?`)) return;
+
+            try {
+                await fetch(`/Admin/ToggleAgentStatus?agentId=${agentId}&isActive=${isActive}`, { method: 'POST' });
+                location.reload();
+            } catch (e) {
+                alert('Error updating status.');
+            }
+        }
+    </script>
+}

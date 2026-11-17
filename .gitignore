@@ -1,0 +1,26 @@
+## Ignore Visual Studio / .NET Core temporary and build files
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+
+## Uploaded files (can be kept or ignored, let's keep directory structure with gitkeep)
+TalkToLiveChat/wwwroot/uploads/*
+!TalkToLiveChat/wwwroot/uploads/.gitkeep
+
+## OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk

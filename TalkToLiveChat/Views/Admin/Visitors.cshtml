@@ -1,0 +1,152 @@
+@model List<TalkToLiveChat.Models.Entities.VisitorSummary>
+@{
+    ViewData["Title"] = "Website Visitor Directory";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1">Customer & Visitor Records</h4>
+        <p class="text-muted small mb-0">Captured mobile numbers (no OTP), contact timestamps, engagement history, and requested services.</p>
+    </div>
+    
+    <!-- Search Form -->
+    <form method="get" class="d-flex align-items-center gap-2">
+        <div class="input-group">
+            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+            <input type="text" name="searchMobile" value="@ViewBag.SearchMobile" class="form-control" placeholder="Search by mobile..." />
+        </div>
+        <button type="submit" class="btn btn-primary fw-semibold px-3">Search</button>
+        @if (!string.IsNullOrEmpty(ViewBag.SearchMobile))
+        {
+            <a asp-action="Visitors" class="btn btn-outline-secondary">Reset</a>
+        }
+    </form>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase text-secondary">
+                <tr>
+                    <th>Visitor ID</th>
+                    <th>Mobile Number</th>
+                    <th>Country Code</th>
+                    <th>First Contact</th>
+                    <th>Last Contact</th>
+                    <th>Total Sessions</th>
+                    <th>Services Requested</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted p-4">No visitor records found.</td>
+                    </tr>
+                }
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">#@v.VisitorId</span></td>
+                        <td>
+                            <strong class="text-dark fs-6">@v.MobileNumber</strong>
+                        </td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">@v.CountryCode</span></td>
+                        <td class="small">@(v.FirstContactDate?.ToString("yyyy-MM-dd HH:mm") ?? v.CreatedDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                        <td class="small">@(v.LastContactDate?.ToString("yyyy-MM-dd HH:mm") ?? "--")</td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success fs-7 px-2">@v.TotalChats Chats</span>
+                        </td>
+                        <td style="max-width:240px;">
+                            <div class="small text-truncate" title="@v.ServicesRequested">
+                                @(string.IsNullOrEmpty(v.ServicesRequested) ? "General" : v.ServicesRequested)
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" onclick="viewVisitorHistory(@v.VisitorId, '@v.MobileNumber')" title="View Chat History">
+                                <i class="fa-solid fa-clock-rotate-left me-1"></i> History
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Visitor History -->
+<div class="modal fade" id="visitorHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-clock-rotate-left text-success me-2"></i>Visitor Chat Sessions History</h5>
+                    <div class="small text-secondary">Mobile: <strong id="histMobile" class="text-white"></strong></div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Service</th>
+                                <th>Assigned Agent</th>
+                                <th>Status</th>
+                                <th>Started At</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorHistoryTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function viewVisitorHistory(visitorId, mobile) {
+            document.getElementById('histMobile').textContent = mobile;
+            const tbody = document.getElementById('visitorHistoryTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3 text-muted">Loading history...</td></tr>';
+
+            const modal = new bootstrap.Modal(document.getElementById('visitorHistoryModal'));
+            modal.show();
+
+            try {
+                const res = await fetch(`/Admin/GetVisitorChats?visitorId=${visitorId}`);
+                const chats = await res.json();
+                if (!chats || chats.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3 text-muted">No chat history found for this visitor.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                chats.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><code>${c.chatSessionId}</code></td>
+                        <td><span class="service-badge">${c.serviceName}</span></td>
+                        <td>${c.agentName || '<span class="text-muted">Unassigned</span>'}</td>
+                        <td><span class="badge ${c.sessionStatus === 'Active' ? 'bg-success' : (c.sessionStatus === 'Pending' ? 'bg-warning text-dark' : 'bg-secondary')}">${c.sessionStatus}</span></td>
+                        <td class="small">${new Date(c.startDate).toLocaleString()}</td>
+                        <td>${c.rating ? `<span class="badge bg-warning text-dark">★ ${c.rating}</span>` : '--'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3 text-danger">Failed to load visitor history.</td></tr>';
+            }
+        }
+    </script>
+}

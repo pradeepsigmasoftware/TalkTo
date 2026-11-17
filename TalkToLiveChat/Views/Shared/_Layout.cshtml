@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TalkTo Live Chat</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="~/lib/font-awesome.min.css" />
+    
+    <!-- Customer Chat Widget CSS -->
+    <link rel="stylesheet" href="~/css/widget.css" asp-append-version="true" />
+    
+    <style>
+        .navbar-brand-talkto {
+            font-weight: 800;
+            font-size: 22px;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .navbar-brand-talkto span {
+            color: #059669;
+        }
+        .nav-btn-portal {
+            background-color: #F0FDF4;
+            color: #059669;
+            font-weight: 600;
+            border: 1.5px solid #A7F3D0;
+            border-radius: 8px;
+            padding: 6px 14px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .nav-btn-portal:hover {
+            background-color: #059669;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
+            <div class="container">
+                <a class="navbar-brand-talkto" asp-controller="Home" asp-action="Index">
+                    <i class="fa-solid fa-comment-dots text-success fs-3"></i>
+                    <span>TalkTo</span> Live
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-medium" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-medium" href="#services-section">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-medium" href="#features-section">Platform Features</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center gap-3">
+                        <a asp-controller="Agent" asp-action="Index" class="nav-btn-portal">
+                            <i class="fa-solid fa-headset me-1"></i> Agent Portal
+                        </a>
+                        <a asp-controller="Admin" asp-action="Index" class="btn btn-dark fw-semibold px-3 py-2 rounded-3">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="navbar-brand-talkto text-white mb-3">
+                        <i class="fa-solid fa-comment-dots text-success fs-3"></i>
+                        <span>TalkTo</span> Live Chat Suite
+                    </div>
+                    <p class="text-secondary small">
+                        A real-time customer messaging application engineered with ASP.NET Core 8 MVC, ADO.NET, SQL Server, and SignalR.
+                    </p>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <h6 class="text-uppercase fw-bold text-success mb-3 small">Workflows</h6>
+                    <ul class="list-unstyled text-secondary small">
+                        <li class="mb-2"><i class="fa-solid fa-angle-right me-1 text-success"></i> 10-Digit Mobile Capture</li>
+                        <li class="mb-2"><i class="fa-solid fa-angle-right me-1 text-success"></i> Dynamic Services</li>
+                        <li class="mb-2"><i class="fa-solid fa-angle-right me-1 text-success"></i> Instant Agent Match</li>
+                        <li class="mb-2"><i class="fa-solid fa-angle-right me-1 text-success"></i> SignalR Live Chat</li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <h6 class="text-uppercase fw-bold text-success mb-3 small">Portals</h6>
+                    <ul class="list-unstyled text-secondary small">
+                        <li class="mb-2"><a asp-controller="Agent" asp-action="Index" class="text-secondary text-decoration-none"><i class="fa-solid fa-user-headset me-1"></i> Agent Live Desk</a></li>
+                        <li class="mb-2"><a asp-controller="Admin" asp-action="Index" class="text-secondary text-decoration-none"><i class="fa-solid fa-chart-line me-1"></i> Admin Dashboard</a></li>
+                        <li class="mb-2"><a asp-controller="Admin" asp-action="Reports" class="text-secondary text-decoration-none"><i class="fa-solid fa-file-excel me-1"></i> Reports & Export</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <h6 class="text-uppercase fw-bold text-success mb-3 small">Live Chat Demo</h6>
+                    <p class="text-secondary small">
+                        Click the green floating chat bubble at the bottom right corner of this screen to test the live chat widget!
+                    </p>
+                </div>
+            </div>
+            <hr class="border-secondary my-4" />
+            <div class="text-center text-secondary small">
+                &copy; @DateTime.UtcNow.Year TalkTo Live Chat. All rights reserved. Built with ASP.NET Core 8 & ADO.NET.
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery & Bootstrap Bundle JS -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SignalR Client JS -->
+    <script src="~/lib/signalr.min.js"></script>
+
+    <!-- Tawk.to-Style Live Chat Customer Widget Script -->
+    <script src="~/js/widget.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

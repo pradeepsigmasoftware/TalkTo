@@ -1,0 +1,282 @@
+@{
+    ViewData["Title"] = "Reports & Analytics";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1">Reports & Performance Analytics</h4>
+        <p class="text-muted small mb-0">Generate daily, monthly, service-wise, agent-wise, pending, and completed analytics. Export to Excel (CSV) or print.</p>
+    </div>
+    
+    <!-- Export and Filter Controls -->
+    <div class="d-flex align-items-center gap-2">
+        <input type="date" id="reportStartDate" class="form-control form-control-sm" style="width:130px;" title="Start Date" />
+        <input type="date" id="reportEndDate" class="form-control form-control-sm" style="width:130px;" title="End Date" />
+        <button type="button" id="btnFilterReport" class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Update
+        </button>
+        <button type="button" id="btnExportCsv" class="btn btn-sm btn-success fw-semibold">
+            <i class="fa-solid fa-file-excel me-1"></i> Export to Excel
+        </button>
+        <button type="button" class="btn btn-sm btn-dark" onclick="window.print()">
+            <i class="fa-solid fa-print me-1"></i> Print / PDF
+        </button>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills nav-fill bg-white p-2 rounded-4 shadow-sm mb-4" id="reportTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active fw-bold small py-2" data-report="Daily">
+            <i class="fa-solid fa-calendar-day me-1"></i> Daily Report
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold small py-2" data-report="Monthly">
+            <i class="fa-solid fa-calendar-days me-1"></i> Monthly Report
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold small py-2" data-report="ServiceWise">
+            <i class="fa-solid fa-cubes-stacked me-1"></i> Service-Wise Report
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold small py-2" data-report="AgentWise">
+            <i class="fa-solid fa-user-tie me-1"></i> Agent-Wise Report
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold small py-2" data-report="Pending">
+            <i class="fa-solid fa-hourglass-start me-1"></i> Pending Report
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-bold small py-2" data-report="Completed">
+            <i class="fa-solid fa-circle-check me-1"></i> Completed Report
+        </button>
+    </li>
+</ul>
+
+<!-- Report Output Container -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0" id="reportHeadingTitle" style="font-size:16px;">
+            <i class="fa-solid fa-chart-column text-success me-2"></i>Daily Chat Analytics
+        </h5>
+        <span id="reportRowCount" class="badge bg-light text-dark border">0 records</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="reportDynamicTable">
+                <thead class="table-light small text-uppercase text-secondary" id="reportTableHead">
+                    <!-- Dynamic Headers -->
+                </thead>
+                <tbody id="reportTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center p-4 text-muted">Loading report data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentReportType = 'Daily';
+
+        document.querySelectorAll('#reportTabs button').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('#reportTabs button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentReportType = this.getAttribute('data-report');
+                loadCurrentReport();
+            });
+        });
+
+        document.getElementById('btnFilterReport').addEventListener('click', loadCurrentReport);
+
+        document.getElementById('btnExportCsv').addEventListener('click', function () {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            window.location.href = `/Admin/ExportReport?reportType=${encodeURIComponent(currentReportType)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+        });
+
+        async function loadCurrentReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            const title = document.getElementById('reportHeadingTitle');
+            const countBadge = document.getElementById('reportRowCount');
+
+            title.innerHTML = `<i class="fa-solid fa-chart-column text-success me-2"></i>${currentReportType} Chat Report`;
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading report data...</td></tr>';
+
+            try {
+                const res = await fetch(`/Admin/GetReportData?reportType=${encodeURIComponent(currentReportType)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+                const data = await res.json();
+
+                countBadge.textContent = `${data.length} records`;
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-muted">No records found for the selected date range.</td></tr>';
+                    return;
+                }
+
+                // Render based on currentReportType
+                switch (currentReportType) {
+                    case 'Daily':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Date</th>
+                                <th>Total Chats</th>
+                                <th>Active Chats</th>
+                                <th>Pending Chats</th>
+                                <th>Completed Chats</th>
+                                <th>Unique Visitors</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><strong>${new Date(d.reportDate).toLocaleDateString()}</strong></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">${d.totalChats}</span></td>
+                                <td><span class="badge bg-success-subtle text-success">${d.activeChats}</span></td>
+                                <td><span class="badge bg-warning-subtle text-warning">${d.pendingChats}</span></td>
+                                <td><span class="badge bg-light text-dark border">${d.completedChats}</span></td>
+                                <td><span class="fw-bold">${d.uniqueVisitors}</span></td>
+                            </tr>
+                        `).join('');
+                        break;
+
+                    case 'Monthly':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Total Chats</th>
+                                <th>Active Chats</th>
+                                <th>Pending Chats</th>
+                                <th>Completed Chats</th>
+                                <th>Unique Visitors</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><strong>${d.reportYear}</strong></td>
+                                <td><span class="fw-semibold">${d.monthName}</span></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">${d.totalChats}</span></td>
+                                <td><span class="badge bg-success-subtle text-success">${d.activeChats}</span></td>
+                                <td><span class="badge bg-warning-subtle text-warning">${d.pendingChats}</span></td>
+                                <td><span class="badge bg-light text-dark border">${d.completedChats}</span></td>
+                                <td><span class="fw-bold">${d.uniqueVisitors}</span></td>
+                            </tr>
+                        `).join('');
+                        break;
+
+                    case 'ServiceWise':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Service ID</th>
+                                <th>Service Name</th>
+                                <th>Total Chats</th>
+                                <th>Active Chats</th>
+                                <th>Pending Chats</th>
+                                <th>Completed Chats</th>
+                                <th>Average Rating</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><span class="badge bg-light text-dark border">#${d.serviceId}</span></td>
+                                <td><strong>${d.serviceName}</strong></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">${d.totalChats}</span></td>
+                                <td><span class="badge bg-success-subtle text-success">${d.activeChats}</span></td>
+                                <td><span class="badge bg-warning-subtle text-warning">${d.pendingChats}</span></td>
+                                <td><span class="badge bg-light text-dark border">${d.completedChats}</span></td>
+                                <td>${d.avgRating ? `<span class="badge bg-warning text-dark">★ ${d.avgRating.toFixed(1)}</span>` : '<span class="text-muted">N/A</span>'}</td>
+                            </tr>
+                        `).join('');
+                        break;
+
+                    case 'AgentWise':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Agent</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Total Assigned</th>
+                                <th>Active Chats</th>
+                                <th>Completed Chats</th>
+                                <th>Average Rating</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><strong>${d.agentName}</strong></td>
+                                <td><code>${d.email}</code></td>
+                                <td><span class="badge ${d.availabilityStatus === 'Online' ? 'bg-success' : 'bg-secondary'}">${d.availabilityStatus}</span></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">${d.totalAssignedChats}</span></td>
+                                <td><span class="badge bg-success-subtle text-success">${d.activeChats}</span></td>
+                                <td><span class="badge bg-light text-dark border">${d.completedChats}</span></td>
+                                <td>${d.avgRating ? `<span class="badge bg-warning text-dark">★ ${d.avgRating.toFixed(1)}</span>` : '<span class="text-muted">N/A</span>'}</td>
+                            </tr>
+                        `).join('');
+                        break;
+
+                    case 'Pending':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Customer Mobile</th>
+                                <th>Service Requested</th>
+                                <th>Initiated At</th>
+                                <th>Waiting Time</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><code>${d.chatSessionId}</code></td>
+                                <td><strong>${d.mobileNumber}</strong></td>
+                                <td><span class="service-badge">${d.serviceName}</span></td>
+                                <td>${new Date(d.startDate).toLocaleString()}</td>
+                                <td><span class="badge bg-warning text-dark">${d.waitingTimeMinutes} mins</span></td>
+                            </tr>
+                        `).join('');
+                        break;
+
+                    case 'Completed':
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Customer Mobile</th>
+                                <th>Service</th>
+                                <th>Handled By</th>
+                                <th>Duration</th>
+                                <th>Rating</th>
+                                <th>Feedback</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><code>${d.chatSessionId}</code></td>
+                                <td><strong>${d.mobileNumber}</strong></td>
+                                <td><span class="service-badge">${d.serviceName}</span></td>
+                                <td>${d.agentName || 'Unassigned'}</td>
+                                <td>${d.durationMinutes != null ? `${d.durationMinutes} mins` : '--'}</td>
+                                <td>${d.rating ? `<span class="badge bg-warning text-dark">★ ${d.rating}</span>` : '--'}</td>
+                                <td class="small text-muted" style="max-width:200px;">${d.feedback || '--'}</td>
+                            </tr>
+                        `).join('');
+                        break;
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-danger">Failed to load report data.</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCurrentReport);
+    </script>
+}

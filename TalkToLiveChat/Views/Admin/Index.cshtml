@@ -1,0 +1,217 @@
+@{
+    ViewData["Title"] = "Admin Dashboard & Live Monitor";
+    Layout = "_AdminLayout";
+    var services = ViewBag.Services as List<TalkToLiveChat.Models.Entities.ServiceItem> ?? new();
+    var agents = ViewBag.Agents as List<TalkToLiveChat.Models.Entities.Agent> ?? new();
+}
+
+<!-- Top KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6 col-12">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-title">Total Visitors</div>
+                <div id="adminStatVisitors" class="kpi-value">0</div>
+            </div>
+            <div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 col-12">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-title">Total Chats</div>
+                <div id="adminStatTotalChats" class="kpi-value">0</div>
+            </div>
+            <div class="kpi-icon teal"><i class="fa-solid fa-comments"></i></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-title">Active Chats</div>
+                <div id="adminStatActive" class="kpi-value text-success">0</div>
+            </div>
+            <div class="kpi-icon green"><i class="fa-solid fa-comment-dots"></i></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi-card border-warning">
+            <div>
+                <div class="kpi-title">Pending Chats</div>
+                <div id="adminStatPending" class="kpi-value text-warning">0</div>
+            </div>
+            <div class="kpi-icon amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-12">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-title">Online Agents</div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <span id="adminStatOnlineAgents" class="kpi-value text-success">0</span>
+                    <span class="text-muted small">/ <span id="adminStatOfflineAgents">0</span> off</span>
+                </div>
+            </div>
+            <div class="kpi-icon purple"><i class="fa-solid fa-headset"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Middle Section: Service Wise Stats & Doughnut Chart -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0" style="font-size:16px;">
+                    <i class="fa-solid fa-cubes-stacked text-success me-2"></i>Service-Wise Chat Distribution
+                </h5>
+                <a asp-action="Services" class="btn btn-sm btn-link text-success text-decoration-none fw-semibold">
+                    Manage Services <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light small text-uppercase text-secondary">
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Total Chats</th>
+                                <th>Active</th>
+                                <th>Pending</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serviceBreakdownTableBody">
+                            @if (ViewBag.Stats?.ServiceStats != null)
+                            {
+                                foreach (var s in ViewBag.Stats.ServiceStats)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@s.ServiceName</td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary px-2">@s.TotalChats</span></td>
+                                        <td><span class="badge bg-success-subtle text-success px-2">@s.ActiveChats</span></td>
+                                        <td><span class="badge bg-warning-subtle text-warning px-2">@s.PendingChats</span></td>
+                                        <td><span class="badge bg-light text-dark border px-2">@s.CompletedChats</span></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="fw-bold mb-0" style="font-size:16px;">
+                    <i class="fa-solid fa-chart-pie text-primary me-2"></i>Chat Volume Ratio
+                </h5>
+            </div>
+            <div class="card-body p-4 d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                <canvas id="servicePieChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Section: Real-Time Live Chat Monitoring Table -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h5 class="fw-bold mb-0" style="font-size:16px;">
+                <i class="fa-solid fa-tower-broadcast text-danger me-2"></i>Live Chat Monitoring Desk
+            </h5>
+            <span class="text-muted small">Real-time status of all customer conversations</span>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <input type="text" id="filterSearchMobile" class="form-control form-control-sm" placeholder="Search mobile..." style="width:140px;" />
+            
+            <select id="filterService" class="form-select form-select-sm" style="width:150px;">
+                <option value="">All Services</option>
+                @foreach (var srv in services)
+                {
+                    <option value="@srv.ServiceId">@srv.ServiceName</option>
+                }
+            </select>
+
+            <select id="filterStatus" class="form-select form-select-sm" style="width:120px;">
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+            </select>
+
+            <input type="date" id="filterStartDate" class="form-control form-control-sm" style="width:125px;" title="Start date" />
+            <input type="date" id="filterEndDate" class="form-control form-control-sm" style="width:125px;" title="End date" />
+
+            <button type="button" id="btnApplyFilters" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-filter me-1"></i> Filter
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-uppercase text-secondary">
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Visitor Mobile</th>
+                        <th>Service</th>
+                        <th>Assigned Agent</th>
+                        <th>Status</th>
+                        <th>Started At</th>
+                        <th>Messages</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="monitoringTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center text-muted p-4">Loading real-time chat sessions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Chat Transcript View -->
+<div class="modal fade" id="chatTranscriptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-comments text-success me-2"></i>Live Transcript Viewer</h5>
+                    <div class="small text-secondary">
+                        Session: <code id="transcriptSessionId" class="text-white"></code> • 
+                        Mobile: <strong id="transcriptMobile"></strong> • 
+                        Service: <span id="transcriptService" class="text-info"></span> • 
+                        Agent: <span id="transcriptAgent" class="text-warning"></span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 bg-light" style="max-height: 480px; overflow-y: auto;">
+                <div id="transcriptMessagesStream" class="d-flex flex-column gap-2">
+                    <!-- Messages will render here -->
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            window.initAdminDashboard();
+        });
+    </script>
+}

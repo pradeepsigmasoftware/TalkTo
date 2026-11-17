@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+  </defs>
+  <!-- Chat Bubble Icon -->
+  <rect x="5" y="8" width="44" height="38" rx="12" fill="url(#logoGrad)" />
+  <polygon points="12,42 22,42 16,52" fill="#059669" />
+  <!-- Dots inside bubble -->
+  <circle cx="18" cy="27" r="3" fill="#ffffff" />
+  <circle cx="27" cy="27" r="3" fill="#ffffff" />
+  <circle cx="36" cy="27" r="3" fill="#ffffff" />
+  <!-- Text -->
+  <text x="60" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#0F172A">
+    tawk<tspan fill="#059669">.to</tspan>
+  </text>
+  <text x="60" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#64748B" letter-spacing="1">
+    LIVE CHAT SUITE
+  </text>
+</svg>
